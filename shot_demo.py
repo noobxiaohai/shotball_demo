@@ -88,7 +88,7 @@ class shot_demo(object):
             print('v', v1, v2)
             print(self.lunch_begin, tri_p1, tri_p2, tri_p3)
             pygame.draw.polygon(self.screen, (255, 0, 0), [tri_p1, tri_p2, tri_p3])
-
+            pass
 
     def moving_stat(self):
         while True:
