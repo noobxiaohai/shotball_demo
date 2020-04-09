@@ -6,6 +6,7 @@ import time
 from pygame.locals import *
 from sys import exit
 import numpy as np
+from Util import get_tri_plist
 
 class shot_demo(object):
     current_stat = None
@@ -73,22 +74,20 @@ class shot_demo(object):
 
     def ready_lunch_stat(self, even):
         mouse_pos = pygame.mouse.get_pos()
-        pygame.draw.polygon(self.screen, (255, 0, 0), [(50,50), (100,100), (50, 100)])
         pygame.draw.line(self.screen, (255, 0, 0), self.lunch_begin, mouse_pos)
-        tri_p1 = np.array(mouse_pos)
-        v1 = tri_p1 - self.lunch_begin
-        dist = np.linalg.norm(v1)
-        v2 = v1.copy()
-        v2[0] = - v2[0]
-        tri_length = 50
+        p1 = np.array(mouse_pos)
+        plist = get_tri_plist(self.lunch_begin, p1)
 
-        if dist != 0:
-            tri_p2 = tri_p1 - tri_length * v1/dist + tri_length * v2/dist
-            tri_p3 = tri_p1 - tri_length * v1/dist - tri_length * v2/dist
-            print('v', v1, v2)
-            print(self.lunch_begin, tri_p1, tri_p2, tri_p3)
-            pygame.draw.polygon(self.screen, (255, 0, 0), [tri_p1, tri_p2, tri_p3])
+        if p1[0] != 0 and p1[1] != 0:
+            pygame.draw.polygon(self.screen, (255, 0, 0), plist)
             pass
+
+        if even.type == MOUSEBUTTONDOWN:
+            self.lunch_end = np.array(mouse_pos)
+            self.current_stat = self.lunch_stat
+
+    def lunch_stat(self, even):
+        pass
 
     def moving_stat(self):
         while True:
