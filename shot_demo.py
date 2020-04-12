@@ -6,7 +6,7 @@ import time
 from pygame.locals import *
 from sys import exit
 import numpy as np
-from Util import get_tri_plist
+from Util import get_tri_plist, Vel, ball
 
 class shot_demo(object):
     current_stat = None
@@ -18,11 +18,15 @@ class shot_demo(object):
     background = None
     lunch_begin = None
     lunch_end = 0
+    ball = None
+    lunch_v = None
+    current_v = None
+    V_FIC_SCALE = 3 # todo: add quility and gravity into physical system
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((640, 480), 0, 32)
         pygame.display.set_caption("shot")
-        self.ball = ball()
+        self.ball = ball(self.ball_rad, self.ball_color)
         self.reset_backgound()
         self.current_stat = self.set_ball_stat
 
@@ -45,7 +49,7 @@ class shot_demo(object):
     def main_loop(self):
         clock = pygame.time.Clock()
         while True:
-            time_pssed = clock.tick(10)
+            #time_pssed = clock.tick(10)
             self.screen.blit(self.background, (0, 0))
             even = pygame.event.poll()
             if even.type == QUIT:
@@ -56,23 +60,26 @@ class shot_demo(object):
     def set_ball_stat(self, even):
         mouse_pos = pygame.mouse.get_pos()
         self.ball.change_pos(mouse_pos)
-        pygame.draw.circle(self.screen, self.ball_color, self.ball.pos, self.ball_rad)
+        pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
         if even.type == MOUSEBUTTONDOWN:
             pos = even.pos
             print('set ball:', pos)
-            pygame.draw.circle(self.background, self.ball_color, self.ball.pos, self.ball_rad)
+            pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
             self.current_stat = self.choose_lunch_stat
 
     def choose_lunch_stat(self, even):
+        pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
         mouse_pos = pygame.mouse.get_pos()
         pygame.draw.circle(self.screen, (255, 0, 0), mouse_pos, int(self.ball_rad/2))
         if even.type == MOUSEBUTTONDOWN:
             # draw begin lunch position
             self.lunch_begin = np.array(mouse_pos)
-            pygame.draw.circle(self.background, (255, 0, 0), mouse_pos, int(self.ball_rad/2))
+            pygame.draw.circle(self.screen, (255, 0, 0), self.lunch_begin, int(self.ball_rad/2))
             self.current_stat = self.ready_lunch_stat
 
     def ready_lunch_stat(self, even):
+        pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
+        pygame.draw.circle(self.screen, (255, 0, 0), self.lunch_begin, int(self.ball_rad / 2))
         mouse_pos = pygame.mouse.get_pos()
         pygame.draw.line(self.screen, (255, 0, 0), self.lunch_begin, mouse_pos)
         p1 = np.array(mouse_pos)
@@ -80,14 +87,21 @@ class shot_demo(object):
 
         if p1[0] != 0 and p1[1] != 0:
             pygame.draw.polygon(self.screen, (255, 0, 0), plist)
-            pass
 
         if even.type == MOUSEBUTTONDOWN:
             self.lunch_end = np.array(mouse_pos)
+            self.begin_v = Vel((self.lunch_end - self.lunch_begin))
+            dv_x = self.begin_v.sin * self.V_FIC_SCALE
+            dv_y = self.begin_v.cos * self.V_FIC_SCALE
+            self.v_firction = Vel(np.array((dv_x, dv_y)))
+            self.current_v = self.begin_v
             self.current_stat = self.lunch_stat
 
     def lunch_stat(self, even):
-        pass
+        self.ball.move_ball(self.current_v)
+        pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
+        self.current_v = Vel.vel_sub(self.current_v, self.v_firction)
+        print(self.current_v.array)
 
     def moving_stat(self):
         while True:
@@ -96,16 +110,8 @@ class shot_demo(object):
                     exit()
         pass
 
-class ball(object):
-    rad = 0
-    color = None
-    pos = None
-    def __init__(self,  rad=0, color=(0, 0, 0)):
-        self.rad = rad
-        self.color = color
-
-    def change_pos(self, pos):
-        self.pos = pos
+    def background_mgr(self):
+        pass
 
 if __name__ == '__main__':
     dm = shot_demo()

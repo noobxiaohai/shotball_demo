@@ -1,12 +1,35 @@
 import math
 import numpy as np
-class Vector(object):
-    def __init__(self, *args):
-        x = args[0]
-        y = args[1]
 
-    def sub(self):
-        pass
+class Vel(object):
+    def __init__(self, array):
+        self.x = array[0]
+        self.y = array[1]
+        self.array = array
+        self.intent = np.linalg.norm(self.array)
+        self.sin = self.y/self.intent
+        self.cos = self.x/self.intent
+        self.v_x = self.intent * self.cos
+        self.v_y = self.intent * self.sin
+
+    @classmethod
+    def vel_sub(self, v1, v2):
+        array = v2.array - v1.array
+        return Vel(array)
+
+class ball(object):
+    rad = 0
+    color = None
+    pos = None
+    def __init__(self,  rad=0, color=(0, 0, 0)):
+        self.rad = rad
+        self.color = color
+
+    def change_pos(self, pos):
+        self.pos = np.array(pos)
+
+    def move_ball(self, v):
+        self.pos += v.array.astype(np.int64)
 
 def get_tri_plist(p1, p2, tri_length=20):
         '''
@@ -28,3 +51,5 @@ def get_tri_plist(p1, p2, tri_length=20):
         tri_p2 = tri_p1 - tri_length * v1 / dist1 + tri_length * v2 / dist2
         tri_p3 = tri_p1 - tri_length * v1 / dist1 - tri_length * v2 / dist2
         return [tri_p1.astype(np.int16), tri_p2.astype(np.int16), tri_p3.astype(np.int16)]
+
+
