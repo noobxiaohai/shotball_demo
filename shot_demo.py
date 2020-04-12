@@ -21,7 +21,7 @@ class shot_demo(object):
     ball = None
     lunch_v = None
     current_v = None
-    V_FIC_SCALE = 3 # todo: add quility and gravity into physical system
+    V_FIC_SCALE = 15 # todo: add quility and gravity into physical system
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((640, 480), 0, 32)
@@ -49,7 +49,7 @@ class shot_demo(object):
     def main_loop(self):
         clock = pygame.time.Clock()
         while True:
-            #time_pssed = clock.tick(10)
+            time_pssed = clock.tick(20)
             self.screen.blit(self.background, (0, 0))
             even = pygame.event.poll()
             if even.type == QUIT:
@@ -91,8 +91,8 @@ class shot_demo(object):
         if even.type == MOUSEBUTTONDOWN:
             self.lunch_end = np.array(mouse_pos)
             self.begin_v = Vel((self.lunch_end - self.lunch_begin))
-            dv_x = self.begin_v.sin * self.V_FIC_SCALE
-            dv_y = self.begin_v.cos * self.V_FIC_SCALE
+            dv_x = self.begin_v.cos * self.V_FIC_SCALE
+            dv_y = self.begin_v.sin * self.V_FIC_SCALE
             self.v_firction = Vel(np.array((dv_x, dv_y)))
             self.current_v = self.begin_v
             self.current_stat = self.lunch_stat
@@ -101,7 +101,7 @@ class shot_demo(object):
         self.ball.move_ball(self.current_v)
         pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
         self.current_v = Vel.vel_sub(self.current_v, self.v_firction)
-        print(self.current_v.array)
+        print(self.ball.pos)
 
     def moving_stat(self):
         while True:

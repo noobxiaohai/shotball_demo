@@ -14,22 +14,26 @@ class Vel(object):
 
     @classmethod
     def vel_sub(self, v1, v2):
-        array = v2.array - v1.array
+        array = v1.array - v2.array
+        print('vel:', v2.array, v1.array, array)
         return Vel(array)
 
 class ball(object):
     rad = 0
     color = None
+    float_pos = None
     pos = None
     def __init__(self,  rad=0, color=(0, 0, 0)):
         self.rad = rad
         self.color = color
 
     def change_pos(self, pos):
-        self.pos = np.array(pos)
+        self.float_pos = np.array(pos).astype(np.float64)
+        self.pos = np.rint(self.float_pos).astype(np.int64)
 
     def move_ball(self, v):
-        self.pos += v.array.astype(np.int64)
+        self.float_pos += v.array
+        self.pos = np.rint(self.float_pos).astype(np.int64)
 
 def get_tri_plist(p1, p2, tri_length=20):
         '''
