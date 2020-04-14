@@ -12,11 +12,29 @@ class Vel(object):
         self.v_x = self.intent * self.cos
         self.v_y = self.intent * self.sin
 
+    @property
+    def get_tan(self):
+        return self.y/self.x
+
+    @property
+    def is_zero(self):
+        return False if self.intent else True
+
+class Vel_util:
+
     @classmethod
     def vel_sub(self, v1, v2):
-        array = v1.array - v2.array
-        print('vel:', v2.array, v1.array, array)
-        return Vel(array)
+        new_v = Vel(v1.array - v2.array)
+        flag = self.is_opposite_direction(v1, new_v)
+        return new_v if flag else Vel(np.array((0, 0)))
+
+    @classmethod
+    # temporally for line move
+    def is_opposite_direction(self, v1, v2):
+        if v1.sin != 0:
+            return True if v2.sin/v1.sin >= 0 else False
+        elif v1.cos != 0:
+            return True if v2.cos/v1.cos >=0 else False
 
 class ball(object):
     rad = 0
