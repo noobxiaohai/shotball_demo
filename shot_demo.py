@@ -9,11 +9,16 @@ import numpy as np
 from Util import get_tri_plist, Vel, ball, Vel_util
 
 class shot_demo(object):
-    current_stat = None
+    # default value
     GATE_WIDTH = 160
     GATE_HEIGHT = 80
     GATE_POS = 0
+    SCREEN_SIZE_X = 640
+    SCREEN_SIZE_Y = 480
+    FINISH_STOP_FRAME = 200
+
     SCORE = 0
+    current_stat = None
     ball_rad = 15
     ball_color = (0, 0, 0)
     background = None
@@ -23,16 +28,18 @@ class shot_demo(object):
     lunch_v = None
     current_v = None
     V_FIC_SCALE = 15 # todo: add quility and gravity into physical system
+    count_frame = FINISH_STOP_FRAME
+
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((640, 480), 0, 32)
+        self.screen = pygame.display.set_mode((self.SCREEN_SIZE_X, self.SCREEN_SIZE_Y), 0, 32)
         pygame.display.set_caption("shot")
         self.new_round()
 
     def new_round(self):
         background_color = (0, 255, 0)
-        self.background = pygame.Surface((640, 480))
-        self.background.fill(background_color, (0, 0, 640, 480))
+        self.background = pygame.Surface((self.SCREEN_SIZE_X, self.SCREEN_SIZE_Y))
+        self.background.fill(background_color, (0, 0, self.SCREEN_SIZE_X, self.SCREEN_SIZE_Y))
         self.set_gate()
         self.draw_gate()
         self.lunch_begin = None
@@ -41,9 +48,11 @@ class shot_demo(object):
         self.lunch_v = None
         self.current_v = None
         self.current_stat = self.set_ball_stat
+        print('begin new round.')
+        print('current gate pos is', self.GATE_POS)
 
     def set_gate(self):
-        self.GATE_POS = (random.randint(0, 640 - self.GATE_WIDTH), 0)
+        self.GATE_POS = (random.randint(0, self.SCREEN_SIZE_X - self.GATE_WIDTH), 0)
 
     def draw_gate(self):
         gate_color = (255, 255, 255)
@@ -107,22 +116,53 @@ class shot_demo(object):
         pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
         self.current_v = Vel_util.vel_sub(self.current_v, self.v_firction)
         # print(self.ball.pos)
+        if self.check_result():
+            self.current_stat = self.finish_stat
 
-        if self.check_goal():
-            self.add_score()
+    def finish_stat(self, even):
+        self.count_frame -= 1
+        self.ball.move_ball(self.current_v)
+        pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
+        if self.count_frame <= 0:
+            self.count_frame = self.FINISH_STOP_FRAME
             self.new_round()
             return
 
-        if self.current_v.is_zero:
-            print('MISSED SHOT.......')
+        if even.type == MOUSEBUTTONDOWN:
+            self.count_frame = self.FINISH_STOP_FRAME
             self.new_round()
-            pass
+            return
+
+    def check_result(self):
+        if self.check_our_range() or self.check_goal() or self.check_miss_shot():
+            return True
+        return False
+
+    def check_our_range(self):
+        ball_x = self.ball.pos[0]
+        ball_y = self.ball.pos[1]
+        if ball_x < 0 or ball_x > self.SCREEN_SIZE_X or ball_y < 0 or ball_y > self.SCREEN_SIZE_Y:
+            print('OUT RANGE...')
+            return True
+
+        if (ball_x in range(0, self.GATE_POS[0]) or ball_x in range(self.GATE_POS[0] + self.GATE_WIDTH, self.SCREEN_SIZE_Y))\
+            and ball_y in range(0, self.GATE_HEIGHT):
+            print('OUT RANGE...')
+            return True
+        return False
 
     def check_goal(self):
         ball_x = self.ball.pos[0]
         ball_y = self.ball.pos[1]
         if ball_x in range(self.GATE_POS[0], self.GATE_POS[0] + self.GATE_WIDTH) and \
             ball_y in range(0, self.GATE_HEIGHT):
+            self.add_score()
+            return True
+        return False
+
+    def check_miss_shot(self):
+        if self.current_v.is_zero:
+            print('MISS THE SHOT...')
             return True
         return False
 
