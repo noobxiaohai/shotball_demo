@@ -74,4 +74,10 @@ def get_tri_plist(p1, p2, tri_length=20):
         tri_p3 = tri_p1 - tri_length * v1 / dist1 - tri_length * v2 / dist2
         return [tri_p1.astype(np.int16), tri_p2.astype(np.int16), tri_p3.astype(np.int16)]
 
-
+color_dic = {
+    'white': (255, 255, 255),
+    'black': (0, 0, 0),
+    'green': (0, 255, 0),
+    'red': (255, 0, 0),
+    'blue': (0, 0, 255)
+}

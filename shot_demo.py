@@ -6,7 +6,7 @@ import time
 from pygame.locals import *
 from sys import exit
 import numpy as np
-from Util import get_tri_plist, Vel, ball, Vel_util
+from Util import get_tri_plist, Vel, ball, Vel_util, color_dic
 
 class shot_demo(object):
     # default value
@@ -15,12 +15,18 @@ class shot_demo(object):
     GATE_POS = 0
     SCREEN_SIZE_X = 640
     SCREEN_SIZE_Y = 480
+    SCREEN_SIZE = (SCREEN_SIZE_X, SCREEN_SIZE_Y)
     FINISH_STOP_FRAME = 200
+    FONT = None
+    FONT_COLOR = color_dic['black']
+    SCORE_FONT_SIZE = 24
+    SCOREBOARD_SIZE = (128, 96)
+    RESULT_STR = {0: 'GOAL!!!', 1: 'OUT RANGE...', 2: 'MISS THE SHOT...'}
 
     SCORE = 0
     current_stat = None
     ball_rad = 15
-    ball_color = (0, 0, 0)
+    ball_color = color_dic['black']
     background = None
     lunch_begin = None
     lunch_end = None
@@ -29,15 +35,37 @@ class shot_demo(object):
     current_v = None
     V_FIC_SCALE = 15 # todo: add quility and gravity into physical system
     count_frame = FINISH_STOP_FRAME
+    round_result = 0 # 0 is win, 1 is out range, 2 is miss shot
+    screen_rect = None
 
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((self.SCREEN_SIZE_X, self.SCREEN_SIZE_Y), 0, 32)
+        self.screen = pygame.display.set_mode(self.SCREEN_SIZE, 0, 32)
+        self.screen_rect = self.screen.get_rect()
         pygame.display.set_caption("shot")
         self.new_round()
 
+    def main_loop(self):
+        clock = pygame.time.Clock()
+        while True:
+            time_pssed = clock.tick(20)
+            self.screen.blit(self.background, (0, 0))
+            self.set_scoreboard()
+            even = pygame.event.poll()
+            if even.type == QUIT:
+                exit()
+            self.current_stat(even)
+            pygame.display.update()
+
+    def set_scoreboard(self):
+        font = pygame.font.SysFont('my_font.ttf', self.SCORE_FONT_SIZE)
+        score_str = 'Now score: %d'%self.SCORE
+        score_surface = font.render(score_str, True, self.FONT_COLOR)
+
+        self.screen.blit(score_surface, (self.SCREEN_SIZE[0] - self.SCOREBOARD_SIZE[0], self.SCREEN_SIZE[1] - self.SCOREBOARD_SIZE[1]))
+
     def new_round(self):
-        background_color = (0, 255, 0)
+        background_color = color_dic['green']
         self.background = pygame.Surface((self.SCREEN_SIZE_X, self.SCREEN_SIZE_Y))
         self.background.fill(background_color, (0, 0, self.SCREEN_SIZE_X, self.SCREEN_SIZE_Y))
         self.set_gate()
@@ -55,21 +83,8 @@ class shot_demo(object):
         self.GATE_POS = (random.randint(0, self.SCREEN_SIZE_X - self.GATE_WIDTH), 0)
 
     def draw_gate(self):
-        gate_color = (255, 255, 255)
-        gate_rec = Rect(self.GATE_POS[0], 0, self.GATE_WIDTH, self.GATE_HEIGHT)
-        pygame.draw.rect(self.background, (255, 255, 255), gate_rec)
+        gate_color = color_dic['white']
         self.background.fill(gate_color, (self.GATE_POS, (self.GATE_WIDTH, self.GATE_HEIGHT)))
-
-    def main_loop(self):
-        clock = pygame.time.Clock()
-        while True:
-            time_pssed = clock.tick(20)
-            self.screen.blit(self.background, (0, 0))
-            even = pygame.event.poll()
-            if even.type == QUIT:
-                exit()
-            self.current_stat(even)
-            pygame.display.update()
 
     def set_ball_stat(self, even):
         mouse_pos = pygame.mouse.get_pos()
@@ -123,6 +138,8 @@ class shot_demo(object):
         self.count_frame -= 1
         self.ball.move_ball(self.current_v)
         pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
+        self.draw_result_font()
+
         if self.count_frame <= 0:
             self.count_frame = self.FINISH_STOP_FRAME
             self.new_round()
@@ -133,6 +150,16 @@ class shot_demo(object):
             self.new_round()
             return
 
+    def draw_result_font(self):
+        font = pygame.font.SysFont('my_font.ttf', self.SCORE_FONT_SIZE)
+        font_str = self.RESULT_STR[self.round_result]
+        font_sf = font.render(font_str, True, self.FONT_COLOR)
+        font_rect = font_sf.get_rect()
+        s_mid = self.screen_rect.center
+        f_mid = font_rect.center
+        set_pos = (s_mid[0] - f_mid[0], s_mid[0] - f_mid[0])
+        self.screen.blit(font_sf, set_pos)
+
     def check_result(self):
         if self.check_our_range() or self.check_goal() or self.check_miss_shot():
             return True
@@ -142,11 +169,13 @@ class shot_demo(object):
         ball_x = self.ball.pos[0]
         ball_y = self.ball.pos[1]
         if ball_x < 0 or ball_x > self.SCREEN_SIZE_X or ball_y < 0 or ball_y > self.SCREEN_SIZE_Y:
+            self.round_result = 1
             print('OUT RANGE...')
             return True
 
         if (ball_x in range(0, self.GATE_POS[0]) or ball_x in range(self.GATE_POS[0] + self.GATE_WIDTH, self.SCREEN_SIZE_Y))\
             and ball_y in range(0, self.GATE_HEIGHT):
+            self.round_result = 1
             print('OUT RANGE...')
             return True
         return False
@@ -156,12 +185,14 @@ class shot_demo(object):
         ball_y = self.ball.pos[1]
         if ball_x in range(self.GATE_POS[0], self.GATE_POS[0] + self.GATE_WIDTH) and \
             ball_y in range(0, self.GATE_HEIGHT):
+            self.round_result = 0
             self.add_score()
             return True
         return False
 
     def check_miss_shot(self):
         if self.current_v.is_zero:
+            self.round_result = 2
             print('MISS THE SHOT...')
             return True
         return False
