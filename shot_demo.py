@@ -119,20 +119,26 @@ class shot_demo(object):
 
         if even.type == MOUSEBUTTONDOWN:
             self.lunch_end = np.array(mouse_pos)
-            self.begin_v = Vel((self.lunch_end - self.lunch_begin))
-            dv_x = self.begin_v.cos * self.V_FIC_SCALE
-            dv_y = self.begin_v.sin * self.V_FIC_SCALE
-            self.v_firction = Vel(np.array((dv_x, dv_y)))
-            self.current_v = self.begin_v
-            self.current_stat = self.lunch_stat
+            if not Vel_util.is_in_ball_rad(self.lunch_end, self.ball):
+                self.current_v = Vel(np.array((0, 0)))
+                self.current_stat = self.lunch_stat
+            else:
+                self.begin_v = Vel((self.lunch_end - self.lunch_begin))
+                dv_x = self.begin_v.cos * self.V_FIC_SCALE
+                dv_y = self.begin_v.sin * self.V_FIC_SCALE
+                self.v_firction = Vel(np.array((dv_x, dv_y)))
+                self.current_v = self.begin_v
+                self.current_stat = self.lunch_stat
 
     def lunch_stat(self, even):
+        if self.check_result():
+            self.current_stat = self.finish_stat
+            return
         self.ball.move_ball(self.current_v)
         pygame.draw.circle(self.screen, self.ball.color, self.ball.pos, self.ball.rad)
         self.current_v = Vel_util.vel_sub(self.current_v, self.v_firction)
         # print(self.ball.pos)
-        if self.check_result():
-            self.current_stat = self.finish_stat
+
 
     def finish_stat(self, even):
         self.count_frame -= 1

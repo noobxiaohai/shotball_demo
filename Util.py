@@ -36,6 +36,13 @@ class Vel_util:
         elif v1.cos != 0:
             return True if v2.cos/v1.cos >=0 else False
 
+    @staticmethod
+    def is_in_ball_rad(pos, ball):
+        rad = ball.rad
+        b_pos = ball.pos
+        dis = np.linalg.norm(pos - b_pos)
+        return True if dis <= rad else False
+
 class ball(object):
     rad = 0
     color = None
